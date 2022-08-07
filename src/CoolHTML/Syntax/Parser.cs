@@ -63,7 +63,6 @@ namespace CoolHTML.Syntax
             for (int i = 0; i < expressions.Count; i++)
             {
                 var expression = expressions[i];
-                //Console.WriteLine(expression.Kind);
 
                 if (expression.Kind == SyntaxKind.StartTagExpression)
                 {
@@ -107,21 +106,23 @@ namespace CoolHTML.Syntax
                 }
                 else if (expression.Kind == SyntaxKind.EndTagExpression)
                 {
-                    _parentNode = parentNode.Parent;
+                    if(_parentNode.Parent == null)
+                    {
+                        _nodes = new List<CoolHTMLNode>() { _parentNode };
+                        return;
+                    }                     
+
+                    _parentNode = _parentNode.Parent;
                     expressions.RemoveAt(0);
                     ParseElements(expressions, _parentNode);
                 }
                 else if (expression.Kind == SyntaxKind.TextExpression)
                 {
                     var textExpression = (TextExpressionSyntax)expression;
-                    parentNode.TextContent = new CoolHTMLTextContent(textExpression.Text.Text);
-
+                    _parentNode.TextContent = new CoolHTMLTextContent(textExpression.Text.Text);
+                    
                     expressions.RemoveAt(0);
-                    ParseElements(expressions, parentNode);
-                }
-                else
-                {
-                    _nodes = new List<CoolHTMLNode>() { parentNode };
+                    ParseElements(expressions, _parentNode);
                 }
             }
         }
