@@ -1,15 +1,13 @@
 ﻿namespace CoolHTML.Syntax
 {
-    internal partial class Parser
+    internal sealed class TextExpressionSyntax : ExpressionSyntax
     {
-        internal class TextExpressionSyntax : ExpressionSyntax
+        public TextExpressionSyntax(SyntaxToken text)
         {
-            public TextExpressionSyntax(SyntaxToken text)
-            {
-                Text = text;
-            }
-
-            public SyntaxToken Text { get; }
+            Text = text;
         }
+
+        public SyntaxToken Text { get; }
+        public override SyntaxKind Kind => SyntaxKind.TextExpression;
     }
 }

@@ -1,19 +1,17 @@
 ﻿namespace CoolHTML.Syntax
 {
-    internal partial class Parser
+    internal sealed class AttributeExpressionSyntax : ExpressionSyntax
     {
-        sealed class AttributeExpressionSyntax : ExpressionSyntax
+        public AttributeExpressionSyntax(SyntaxToken attributeName, SyntaxToken equalSign, StringExpressionSyntax value)
         {
-            public AttributeExpressionSyntax(SyntaxToken attributeName, SyntaxToken equalSign, StringExpressionSyntax attribute)
-            {
-                AttributeName = attributeName;
-                EqualSign = equalSign;
-                Attribute = attribute;
-            }
-
-            public SyntaxToken AttributeName { get; }
-            public SyntaxToken EqualSign { get; }
-            public StringExpressionSyntax Attribute { get; }
+            AttributeName = attributeName;
+            EqualSign = equalSign;
+            Value = value;
         }
+
+        public SyntaxToken AttributeName { get; }
+        public SyntaxToken EqualSign { get; }
+        public StringExpressionSyntax Value { get; }
+        public override SyntaxKind Kind => SyntaxKind.AttributeExpression;
     }
 }

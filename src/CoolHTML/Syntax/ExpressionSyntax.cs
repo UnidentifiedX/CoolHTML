@@ -1,10 +1,7 @@
 ﻿namespace CoolHTML.Syntax
 {
-    internal partial class Parser
+    internal abstract class ExpressionSyntax
     {
-        internal abstract class ExpressionSyntax
-        {
-
-        }
+        public abstract SyntaxKind Kind { get; }
     }
 }

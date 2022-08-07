@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
+using CoolHTML;
 
 namespace CoolHTML.Syntax
 {
@@ -8,6 +10,7 @@ namespace CoolHTML.Syntax
     {
         private readonly SyntaxToken[] _tokens;
         private int _position;
+        private List<CoolHTMLNode> _nodes;
 
         public Parser(string html)
         {
@@ -31,18 +34,156 @@ namespace CoolHTML.Syntax
             //}
         }
 
-        public ExpressionSyntax Parse()
+        public List<CoolHTMLNode> Parse()
+        {
+            var expressions = new List<ExpressionSyntax>();
+            ExpressionSyntax expression;
+
+            do
+            {
+                expression = ParseExpression();
+                expressions.Add(expression);
+                Console.WriteLine(expression.ToString());
+            } while (expression.Kind != SyntaxKind.EndOfFileExpression);
+
+            return ParseTree(expressions);
+        }
+
+        private List<CoolHTMLNode> ParseTree(List<ExpressionSyntax> expressions)
+        {
+            ParseElements(expressions);
+
+            Debugger.Break();
+            return _nodes;
+        }
+
+        private void ParseElements(List<ExpressionSyntax> expressions, CoolHTMLNode parentNode = null)
+        {
+            var _parentNode = parentNode;
+            for (int i = 0; i < expressions.Count; i++)
+            {
+                var expression = expressions[i];
+                //Console.WriteLine(expression.Kind);
+
+                if (expression.Kind == SyntaxKind.StartTagExpression)
+                {
+                    var startTagExpression = (StartTagExpressionSyntax)expression;
+                    var attributeArray = startTagExpression.Attributes;
+                    var attributeList = new List<CoolHTMLAttribute>();
+
+                    foreach (var attribute in attributeArray)
+                    {
+                        var stringContent = attribute.Value.StringContent;
+                        var content = "";
+
+                        foreach (var str in stringContent)
+                        {
+                            content += str.Text;
+                        }
+
+                        attributeList.Add(
+                                new CoolHTMLAttribute(attribute.AttributeName.Text, content)
+                            );
+                    }
+
+                    var children = new List<CoolHTMLNode>();
+
+                    if (_parentNode != null)
+                        children = _parentNode.Children;
+
+                    var node = new CoolHTMLNode(_parentNode,
+                        children,
+                        SwitchType(startTagExpression.TagName.Text),
+                        attributeList,
+                        null);
+
+                    if(_parentNode != null)
+                        _parentNode.Children.Add(node);
+
+                    _parentNode = node;
+
+                    expressions.RemoveAt(0);
+                    ParseElements(expressions, _parentNode);
+                }
+                else if (expression.Kind == SyntaxKind.EndTagExpression)
+                {
+                    _parentNode = parentNode.Parent;
+                    expressions.RemoveAt(0);
+                    ParseElements(expressions, _parentNode);
+                }
+                else if (expression.Kind == SyntaxKind.TextExpression)
+                {
+                    var textExpression = (TextExpressionSyntax)expression;
+                    parentNode.TextContent = new CoolHTMLTextContent(textExpression.Text.Text);
+
+                    expressions.RemoveAt(0);
+                    ParseElements(expressions, parentNode);
+                }
+                else
+                {
+                    _nodes = new List<CoolHTMLNode>() { parentNode };
+                }
+            }
+        }
+
+        private static List<CoolHTMLAttribute> GetAttributeList(AttributeExpressionSyntax[] attributeArray)
+        {
+            var attributes = new List<CoolHTMLAttribute>();
+            foreach (var attribute in attributeArray)
+            {
+                string attributeValue = "";
+                foreach (var value in attribute.Value.StringContent)
+                {
+                    attributeValue += value.Text;
+                }
+
+                var coolHTMLAttribute = new CoolHTMLAttribute(attribute.AttributeName.Text, attributeValue);
+                attributes.Add(coolHTMLAttribute);
+            }
+
+            return attributes;
+        }
+
+        private ExpressionSyntax ParseExpression()
         {
             switch (Current.Kind)
             {
                 case SyntaxKind.EndOfFileToken:
-                    return new EndOfFileExpressionSyntax();
+                    var endOfFileToken = Match(SyntaxKind.CharacterToken);
+                    return new EndOfFileExpressionSyntax(endOfFileToken);
                 case SyntaxKind.LessThanToken:
                     return ParseStartTag();
                 case SyntaxKind.LessThanBackslashToken:
                     return ParseEndTag();
                 default:
                     return ParseText();
+            }
+        }
+
+        private TagType GetType(ExpressionSyntax expression)
+        {
+            var tagType = ((TagExpressionSyntax)expression).TagKind;
+            return SwitchType(((StartTagExpressionSyntax)expression).TagName.Text);
+        }
+
+        private TagType SwitchType(string text)
+        {
+            switch (text.ToLower())
+            {
+                case "body":
+                    return TagType.BodyTag;
+                case "head":
+                    return TagType.HeadTag;
+                case "html":
+                    return TagType.HtmlTag;
+                case "p":
+                    return TagType.PTag;
+                case "strong":
+                    return TagType.StrongTag;
+                case "title":
+                    return TagType.TitleTag;
+                default:
+                    return TagType.CustomTag;
             }
         }
 

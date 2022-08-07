@@ -19,12 +19,13 @@ namespace CoolHTML
         public void Parse()
         {
             var parser = new Parser(File.ReadAllText(@"..\..\..\..\CoolHTML\HTML\index.html"));
-            while (true)
-            {
-                var a = parser.Parse();
-                //Console.WriteLine(a);
-                Debugger.Break();
-            }
+            var a = parser.Parse();
+
+
+            //foreach (var item in a)
+            //{
+            //    Console.WriteLine(item);
+            //}
         }
 
         //public List<SyntaxToken> FromHtmlString(string html)

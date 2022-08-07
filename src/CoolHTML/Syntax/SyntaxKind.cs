@@ -16,8 +16,16 @@
         ExclamationToken,
         HyphenHyphenToken,
 
-        // Keyword
+        // Keywords
         HtmlKeyword,
         Any,
+
+        // Expressions 
+        AttributeExpression,
+        EndOfFileExpression,
+        EndTagExpression,
+        StartTagExpression,
+        StringExpression,
+        TextExpression
     }
 }

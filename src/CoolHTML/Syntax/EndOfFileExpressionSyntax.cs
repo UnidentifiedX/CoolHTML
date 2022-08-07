@@ -1,13 +1,13 @@
 ﻿namespace CoolHTML.Syntax
 {
-    internal partial class Parser
+    internal sealed class EndOfFileExpressionSyntax : ExpressionSyntax
     {
-        class EndOfFileExpressionSyntax : ExpressionSyntax
+        public EndOfFileExpressionSyntax(SyntaxToken endOfFileToken)
         {
-            public EndOfFileExpressionSyntax()
-            {
+            EndOfFileToken = endOfFileToken;
+        }
 
-            }
-        } 
-    }
+        public SyntaxToken EndOfFileToken { get; }
+        public override SyntaxKind Kind => SyntaxKind.EndOfFileExpression;
+    } 
 }
