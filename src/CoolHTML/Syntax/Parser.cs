@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using CoolHTML;
 
@@ -10,7 +11,7 @@ namespace CoolHTML.Syntax
     {
         private readonly SyntaxToken[] _tokens;
         private int _position;
-        private List<CoolHTMLNode> _nodes;
+        private readonly List<CoolHTMLNode> _nodes = new List<CoolHTMLNode>();
 
         public Parser(string html)
         {
@@ -52,6 +53,7 @@ namespace CoolHTML.Syntax
         private List<CoolHTMLNode> ParseTree(List<ExpressionSyntax> expressions)
         {
             ParseElements(expressions);
+            var a = _nodes.SelectMany(i => i.Children);
 
             Debugger.Break();
             return _nodes;
@@ -85,19 +87,20 @@ namespace CoolHTML.Syntax
                             );
                     }
 
-                    var children = new List<CoolHTMLNode>();
-
-                    if (_parentNode != null)
-                        children = _parentNode.Children;
-
-                    var node = new CoolHTMLNode(_parentNode,
-                        children,
-                        SwitchType(startTagExpression.TagName.Text),
-                        attributeList,
-                        null);
+                    var node = new CoolHTMLNode(
+                            parent: _parentNode,
+                            children: new List<CoolHTMLNode>(),
+                            type: SwitchType(startTagExpression.TagName.Text),
+                            name: startTagExpression.TagName.Text,
+                            attributes: attributeList,
+                            textContent: null
+                        );
 
                     if(_parentNode != null)
+                    {
+                        _parentNode.InnerHtml += node.Attributes.Count == 0 ? $"<{node.Name}>" : $"<{node.Name} {node.AttributeString}>";
                         _parentNode.Children.Add(node);
+                    }
 
                     _parentNode = node;
 
@@ -106,13 +109,15 @@ namespace CoolHTML.Syntax
                 }
                 else if (expression.Kind == SyntaxKind.EndTagExpression)
                 {
-                    if(_parentNode.Parent == null)
+                    if (_parentNode.Parent == null)
                     {
-                        _nodes = new List<CoolHTMLNode>() { _parentNode };
+                        _nodes.Add(_parentNode);
                         return;
-                    }                     
+                    }
 
+                    var currentNode = _parentNode;
                     _parentNode = _parentNode.Parent;
+                    _parentNode.InnerHtml += currentNode.InnerHtml + $"</{currentNode.Name}>";
                     expressions.RemoveAt(0);
                     ParseElements(expressions, _parentNode);
                 }
@@ -120,29 +125,13 @@ namespace CoolHTML.Syntax
                 {
                     var textExpression = (TextExpressionSyntax)expression;
                     _parentNode.TextContent = new CoolHTMLTextContent(textExpression.Text.Text);
-                    
+                    _parentNode.Children.Add(new CoolHTMLNode(_parentNode, null, TagType.TextTag, "#text", null, new CoolHTMLTextContent(textExpression.Text.Text)));
+                    _parentNode.InnerHtml += textExpression.Text.Text.Trim();
+
                     expressions.RemoveAt(0);
                     ParseElements(expressions, _parentNode);
                 }
             }
-        }
-
-        private static List<CoolHTMLAttribute> GetAttributeList(AttributeExpressionSyntax[] attributeArray)
-        {
-            var attributes = new List<CoolHTMLAttribute>();
-            foreach (var attribute in attributeArray)
-            {
-                string attributeValue = "";
-                foreach (var value in attribute.Value.StringContent)
-                {
-                    attributeValue += value.Text;
-                }
-
-                var coolHTMLAttribute = new CoolHTMLAttribute(attribute.AttributeName.Text, attributeValue);
-                attributes.Add(coolHTMLAttribute);
-            }
-
-            return attributes;
         }
 
         private ExpressionSyntax ParseExpression()
