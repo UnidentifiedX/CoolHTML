@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace CoolHTML
 {
@@ -18,7 +19,6 @@ namespace CoolHTML
         public List<CoolHTMLNode> Children { get; }
         public TagType Type { get; }
         public string Name { get; }
-
         public List<CoolHTMLAttribute> Attributes { get; set; }
         public CoolHTMLTextContent TextContent { get; set; }
         public string InnerHtml { get; set; }
@@ -31,6 +31,13 @@ namespace CoolHTML
                 innerHtml = (Attributes.Count == 0 ? $"<{Name}>" : $"<{Name} {AttributeString}>") + innerHtml + $"</{Name}>";
 
                 return innerHtml;
+            }
+        }
+        public string InnerText
+        {
+            get
+            {
+                return Regex.Replace(Regex.Replace(InnerHtml, @"<(.*?)>", " "), @" +", " ");
             }
         }
         public string AttributeString { 
